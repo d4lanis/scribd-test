@@ -17,20 +17,31 @@ function App() {
     
     const performDownload = async () => {
       const response = await fetch('https://69289e2a00238ff8db03.sfo.appwrite.run', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url: url })
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: url })
       });
 
-      if (!response.ok) throw new Error('Download failed');
+      const data = await response.json();
 
-      const blob = await response.blob();
+      if (!response.ok) {
+          throw new Error(data.error || 'Download failed');
+      }
+
+      // Convert Base64 to Blob
+      const byteCharacters = atob(data.content);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+
+      // Create Download Link
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = downloadUrl;
-      link.download = 'document.pdf';
+      link.download = data.filename || 'download.pdf';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
